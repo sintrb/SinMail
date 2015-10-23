@@ -25,7 +25,7 @@ def parsemail(mail, savename):
             names.append(name)
             attindex = len(names)
             try:
-                f = open(u'%s.atach.%d.%s'%(prefix, attindex, fname), 'wb')
+                f = open(u'%s.atach.%d.%s'%(prefix, attindex, name), 'wb')
             except:
                 f = open('%s.atach.%d'%(prefix, attindex), 'wb')
             f.write(data)
