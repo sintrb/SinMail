@@ -1,6 +1,42 @@
 import smtpd
 import asyncore
 import os
+import email
+def parsemail(mail, savename):
+    attindex = 0
+    prefix = savename
+    mails = []
+    def parsesingle(mail):
+        if mail.is_multipart():
+            for m in mail.get_payload():
+                parsesingle(m)
+            return
+        name = mail.get_param("name")
+        if name:
+            # attachment
+            name = email.Header.decode_header(email.Header.Header(name))[0][0]
+        charset = mail.get_content_charset()
+        contenttype = mail.get_content_type()
+        data = mail.get_payload(decode=True)
+        if charset and contenttype and contenttype.upper().startswith('TEXT'):
+            data = unicode(data, str(charset), "ignore").encode('utf8', 'replace')
+        if name:
+            # save attachment
+            attindex += 1
+            try:
+                f = open(u'%s.atach.%d.%s'%(prefix, attindex, fname), 'wb')
+            except:
+                f = open('%s.atach.%d'%(prefix, attindex), 'wb')
+            f.write(data)
+            f.close()
+        else:
+            mails.append(data)
+    parsesingle(mail)
+    mailtext = '\r\n\r\n'.join(mails)
+    with open(savename, 'wb') as f:
+        f.write(mailtext)
+    return mailtext
+
 
 class MainSMTPServer(smtpd.SMTPServer):
     __version__ = 'TEST EMAIL SERVER'
@@ -13,10 +49,12 @@ class MainSMTPServer(smtpd.SMTPServer):
         except:
             pass
         ts = time.strftime('%Y%m%d%H%M%S')
+        mail = email.message_from_string(data)
+        mailtext = parsemail(mail, os.path.join(d, '%s.txt'%ts))
         for t in rcpttos:
             fn = os.path.join(d, '%s-%s'%(ts, t))
             print fn
-            with open(fn,'w+') as f:
+            with open(fn,'wb') as f:
                 f.write(data)
 
         kf = '%-15s'
@@ -25,7 +63,7 @@ class MainSMTPServer(smtpd.SMTPServer):
         print kf%'Mail From',':', mailfrom
         print kf%'Mail To',':', rcpttos
         print kf%'Mail Lenth',':', len(data)
-        print data
+        print mailtext
         return
 
 if __name__ == "__main__":
