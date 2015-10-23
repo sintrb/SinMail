@@ -3,9 +3,9 @@ import asyncore
 import os
 import email
 def parsemail(mail, savename):
-    attindex = 0
     prefix = savename
     mails = []
+    names = []
     def parsesingle(mail):
         if mail.is_multipart():
             for m in mail.get_payload():
@@ -22,7 +22,8 @@ def parsemail(mail, savename):
             data = unicode(data, str(charset), "ignore").encode('utf8', 'replace')
         if name:
             # save attachment
-            attindex += 1
+            names.append(name)
+            attindex = len(names)
             try:
                 f = open(u'%s.atach.%d.%s'%(prefix, attindex, fname), 'wb')
             except:
